@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+.pytest_cache/
+
+# SQLite DB
+app/todos.db
+
+# Jenkins
+*.lastbuild
+
+*.pdf

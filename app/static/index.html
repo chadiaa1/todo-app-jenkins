@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List App</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="main-header">
+        <h1>TODO Web Application</h1>
+        <p class="subtitle">Simple Todo app to demonstrate CI/CD pipelines</p>
+    </header>
+    <div class="container">
+        <h1>Your Todos</h1>
+
+        <form id="todo-form" class="inline-form">
+            <input type="text" id="todo-input" placeholder="Add a new todo..." required>
+            <button type="submit" class="btn btn-primary">Add</button>
+            <button type="button" id="clear-history" class="btn btn-secondary">Clear History</button>
+        </form>
+
+        <table id="todo-table" class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Done</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- todos rows -->
+            </tbody>
+        </table>
+
+        <h2>History</h2>
+        <table id="history-table" class="table small">
+            <thead>
+                <tr><th>Time</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                <!-- history rows -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        const apiUrl = "/todos";
+
+        function nowIso() {
+            return new Date().toLocaleString();
+        }
+
+        function loadHistory() {
+            const raw = localStorage.getItem('todo_history') || '[]';
+            return JSON.parse(raw);
+        }
+
+        function saveHistory(history) {
+            localStorage.setItem('todo_history', JSON.stringify(history));
+        }
+
+        function addHistory(action) {
+            const history = loadHistory();
+            history.unshift({ time: nowIso(), action });
+            if (history.length > 200) history.pop();
+            saveHistory(history);
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const history = loadHistory();
+            const tbody = document.querySelector('#history-table tbody');
+            tbody.innerHTML = '';
+            history.forEach(h => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${h.time}</td><td>${h.action}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function fetchTodos() {
+            const response = await fetch(apiUrl);
+            const todos = await response.json();
+            const tbody = document.querySelector('#todo-table tbody');
+            tbody.innerHTML = '';
+            todos.forEach(todo => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${todo.id}</td>
+                    <td>${escapeHtml(todo.title)}</td>
+                    <td><input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleDone(${todo.id}, this.checked)"></td>
+                    <td><button class="btn btn-danger" onclick="deleteTodo(${todo.id})">Delete</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        async function addTodo(event) {
+            event.preventDefault();
+            const input = document.getElementById('todo-input');
+            const title = input.value.trim();
+            if (!title) return;
+            await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title })
+            });
+            addHistory(`Added: ${title}`);
+            input.value = '';
+            fetchTodos();
+        }
+
+        async function toggleDone(id, done) {
+            await fetch(`${apiUrl}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ done })
+            });
+            addHistory(`${done ? 'Completed' : 'Marked pending'}: #${id}`);
+            fetchTodos();
+        }
+
+        async function deleteTodo(id) {
+            await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+            addHistory(`Deleted: #${id}`);
+            fetchTodos();
+        }
+
+        document.getElementById('todo-form').addEventListener('submit', addTodo);
+        document.getElementById('clear-history').addEventListener('click', () => {
+            localStorage.removeItem('todo_history');
+            renderHistory();
+        });
+
+        renderHistory();
+        fetchTodos();
+    </script>
+</body>
+</html>
