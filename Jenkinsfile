@@ -4,26 +4,30 @@ pipeline {
     stages {
         stage('Test Python') {
             steps {
-                bat "C:\\Users\\kamal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe --version"
+                // Use the Python available on PATH or an agent tool; avoids hardcoded user paths
+                bat "%PYTHON% --version"
             }
         }
 
         stage('Install') {
             steps {
-                bat "C:\\Users\\kamal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -m pip install -r requirements.txt"
+                bat "if not exist reports mkdir reports"
+                bat "%PYTHON% -m pip install --upgrade pip"
+                bat "%PYTHON% -m pip install -r requirements.txt"
             }
         }
 
         stage('Test App') {
             steps {
-                bat "C:\\Users\\kamal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -m pytest test_app.py -v"
+                // Run pytest and emit JUnit XML for Jenkins reporting
+                bat "%PYTHON% -m pytest test_app.py -v --junitxml=reports/junit.xml"
             }
         }
     }
 
     post {
         success {
-            echo 'BUILD REUSSI!'
+            echo 'BUILD SUCCESS!'
         }
     }
 }
