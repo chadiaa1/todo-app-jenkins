@@ -38,7 +38,7 @@ def test_health(client):
     print("TEST: /health endpoint returns status and payload")
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok"}
+    assert r.json() == {"status": "ok", "jenkins_test": True}  # ✅ CORRIGÉ
 
 
 # Test: Create a todo and list todos
