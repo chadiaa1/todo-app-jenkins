@@ -1,33 +1,61 @@
 pipeline {
     agent any
-
+    
     stages {
         stage('Test Python') {
             steps {
-                // Use the Python available on PATH or an agent tool; avoids hardcoded user paths
-                bat "%PYTHON% --version"
+                bat 'python --version'  // ✅ Ajoutez "python"
             }
         }
-
-        stage('Install') {
+        
+        stage('Setup Environment') {
             steps {
-                bat "if not exist reports mkdir reports"
-                bat "%PYTHON% -m pip install --upgrade pip"
-                bat "%PYTHON% -m pip install -r requirements.txt"
+                echo 'Setting up Python virtual environment...'
+                bat '''
+                    if exist venv rmdir /s /q venv
+                    python -m venv venv
+                '''
             }
         }
-
-        stage('Test App') {
+        
+        stage('Install Dependencies') {
             steps {
-                // Run pytest and emit JUnit XML for Jenkins reporting
-                bat "%PYTHON% -m pytest test_app.py -v --junitxml=reports/junit.xml"
+                echo 'Installing dependencies...'
+                bat '''
+                    call venv\\Scripts\\activate.bat
+                    python -m pip install --upgrade pip
+                    pip install fastapi uvicorn pytest sqlalchemy pydantic httpx
+                '''
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                echo 'Running pytest tests...'
+                bat '''
+                    call venv\\Scripts\\activate.bat
+                    pytest -v
+                '''
+            }
+        }
+        
+        stage('Health Check') {
+            steps {
+                echo 'Verifying application...'
+                bat '''
+                    call venv\\Scripts\\activate.bat
+                    python -c "from app.main import app; print('✅ App OK')"
+                '''
             }
         }
     }
-
+    
     post {
         success {
-            echo 'BUILD SUCCESS!'
+            echo '✅ Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check logs above.'
         }
     }
 }
