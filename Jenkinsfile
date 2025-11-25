@@ -4,14 +4,14 @@ pipeline {
     stages {
         stage('Install dependencies') {
             steps {
-                bat 'pip install --upgrade pip'
-                bat 'pip install -r requirements.txt'
+                bat 'py -m pip install --upgrade pip'
+                bat 'py -m pip install -r requirements.txt'
             }
         }
         
         stage('Test') {
             steps {
-                bat 'pytest test_app.py --maxfail=1 --disable-warnings'
+                bat 'py -m pytest test_app.py --maxfail=1 --disable-warnings'
             }
         }
         
