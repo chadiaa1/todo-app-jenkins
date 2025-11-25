@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Test Python') {
             steps {
-                bat 'python --version'  // ✅ Ajoutez "python"
+                bat 'python --version'
             }
         }
         
@@ -44,7 +44,7 @@ pipeline {
                 echo 'Verifying application...'
                 bat '''
                     call venv\\Scripts\\activate.bat
-                    python -c "from app.main import app; print('✅ App OK')"
+                    python -c "from app.main import app; print('App imported successfully')"
                 '''
             }
         }
@@ -52,10 +52,13 @@ pipeline {
     
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo '❌ Pipeline failed. Check logs above.'
+            echo 'Pipeline failed. Check logs above.'
+        }
+        always {
+            echo 'Cleaning up workspace...'
         }
     }
 }
