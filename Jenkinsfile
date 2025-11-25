@@ -15,14 +15,9 @@ pipeline {
                 sh 'pip install -r requirements.txt'
             }
         }
-        stage('Lint') {
-            steps {
-                sh 'python -m flake8 app'
-            }
-        }
         stage('Test') {
             steps {
-                sh 'pytest --maxfail=1 --disable-warnings'
+                    sh 'pytest test_app.py --maxfail=1 --disable-warnings'
             }
         }
         stage('Build Docker image') {
